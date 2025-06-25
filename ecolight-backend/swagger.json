@@ -1,0 +1,552 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Ecolight API",
+    "version": "1.0.0",
+    "description": "API REST complète pour la gestion intelligente des déchets - Système Ecolight",
+    "termsOfService": "https://ecolight.com/terms",
+    "contact": {
+      "name": "Équipe de développement Ecolight",
+      "email": "dev@ecolight.com",
+      "url": "https://ecolight.com/support"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Serveur de développement local"
+    },
+    {
+      "url": "https://api-staging.ecolight.com",
+      "description": "Serveur de staging"
+    },
+    {
+      "url": "https://api.ecolight.com",
+      "description": "Serveur de production"
+    }
+  ],
+  "paths": {},
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT d'authentification. Format: Bearer <token>"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID unique de l'utilisateur"
+          },
+          "nom": {
+            "type": "string",
+            "description": "Nom complet de l'utilisateur"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email unique"
+          },
+          "telephone": {
+            "type": "string",
+            "description": "Numéro de téléphone"
+          },
+          "adresse": {
+            "type": "string",
+            "description": "Adresse postale complète"
+          },
+          "ville": {
+            "type": "string",
+            "description": "Ville de résidence"
+          },
+          "code_postal": {
+            "type": "string",
+            "description": "Code postal"
+          },
+          "date_creation": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création du compte"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["actif", "inactif", "suspendu"],
+            "description": "Statut du compte utilisateur"
+          }
+        }
+      },
+      "Collector": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID unique du collecteur"
+          },
+          "nom": {
+            "type": "string",
+            "description": "Nom de l'entreprise de collecte"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description des services proposés"
+          },
+          "zone_desservie": {
+            "type": "string",
+            "description": "Zones géographiques couvertes"
+          },
+          "telephone": {
+            "type": "string",
+            "description": "Numéro de téléphone de contact"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email de contact"
+          },
+          "tarif_mensuel": {
+            "type": "number",
+            "format": "float",
+            "description": "Tarif mensuel en euros"
+          },
+          "types_dechets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["menagers", "recyclables", "organiques", "verts", "encombrants", "electroniques", "dangereux", "compostables"]
+            },
+            "description": "Types de déchets collectés"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["actif", "inactif"],
+            "description": "Statut du collecteur"
+          },
+          "date_creation": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création"
+          }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID unique de l'abonnement"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "ID de l'utilisateur abonné"
+          },
+          "collector_id": {
+            "type": "integer",
+            "description": "ID du collecteur"
+          },
+          "date_abonnement": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de souscription"
+          },
+          "date_fin": {
+            "type": "string",
+            "format": "date",
+            "description": "Date de fin d'abonnement (optionnel)"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["actif", "suspendu", "annule"],
+            "description": "Statut de l'abonnement"
+          },
+          "commentaires": {
+            "type": "string",
+            "description": "Commentaires ou instructions spéciales"
+          }
+        }
+      },
+      "Schedule": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID unique de l'horaire"
+          },
+          "collector_id": {
+            "type": "integer",
+            "description": "ID du collecteur"
+          },
+          "jour_semaine": {
+            "type": "string",
+            "enum": ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"],
+            "description": "Jour de la semaine"
+          },
+          "heure_debut": {
+            "type": "string",
+            "format": "time",
+            "description": "Heure de début de collecte"
+          },
+          "heure_fin": {
+            "type": "string",
+            "format": "time",
+            "description": "Heure de fin de collecte"
+          },
+          "zone_specifique": {
+            "type": "string",
+            "description": "Zone spécifique dans la zone desservie"
+          },
+          "type_dechet": {
+            "type": "string",
+            "description": "Type de déchet collecté ce jour"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID unique de la notification"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "ID de l'utilisateur destinataire"
+          },
+          "titre": {
+            "type": "string",
+            "description": "Titre de la notification"
+          },
+          "message": {
+            "type": "string",
+            "description": "Contenu de la notification"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["info", "alerte", "rappel", "confirmation"],
+            "description": "Type de notification"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["non_lu", "lu", "archive"],
+            "description": "Statut de lecture"
+          },
+          "date_creation": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de création"
+          },
+          "date_lecture": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de lecture par l'utilisateur"
+          },
+          "donnees_supplementaires": {
+            "type": "object",
+            "description": "Données additionnelles en format JSON"
+          }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID unique du signalement"
+          },
+          "user_id": {
+            "type": "integer",
+            "description": "ID de l'utilisateur signalant"
+          },
+          "localisation": {
+            "type": "string",
+            "description": "Localisation GPS ou adresse"
+          },
+          "latitude": {
+            "type": "number",
+            "format": "float",
+            "description": "Latitude GPS"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "float",
+            "description": "Longitude GPS"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description détaillée du problème"
+          },
+          "type_dechet": {
+            "type": "string",
+            "description": "Type de déchets observés"
+          },
+          "niveau_urgence": {
+            "type": "string",
+            "enum": ["faible", "moyen", "eleve", "critique"],
+            "description": "Niveau d'urgence"
+          },
+          "statut": {
+            "type": "string",
+            "enum": ["nouveau", "en_cours", "resolu", "rejete"],
+            "description": "Statut de traitement"
+          },
+          "date_signalement": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date du signalement"
+          },
+          "date_resolution": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date de résolution"
+          },
+          "commentaire_resolution": {
+            "type": "string",
+            "description": "Commentaire de résolution"
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Message de réponse"
+          },
+          "data": {
+            "description": "Données de la réponse"
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Type d'erreur"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message d'erreur détaillé"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Détails de validation (optionnel)"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "current_page": {
+            "type": "integer",
+            "description": "Page actuelle"
+          },
+          "total_pages": {
+            "type": "integer",
+            "description": "Nombre total de pages"
+          },
+          "total_items": {
+            "type": "integer",
+            "description": "Nombre total d'éléments"
+          },
+          "items_per_page": {
+            "type": "integer",
+            "description": "Nombre d'éléments par page"
+          },
+          "has_next": {
+            "type": "boolean",
+            "description": "Indique s'il y a une page suivante"
+          },
+          "has_previous": {
+            "type": "boolean",
+            "description": "Indique s'il y a une page précédente"
+          }
+        }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Token d'authentification manquant ou invalide",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Token invalide",
+              "message": "Veuillez vous reconnecter"
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Accès refusé - Permissions insuffisantes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Accès refusé",
+              "message": "Vous n'avez pas l'autorisation d'accéder à cette ressource"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Ressource non trouvée",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Ressource non trouvée",
+              "message": "L'élément demandé n'existe pas"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Erreur de validation des données",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Erreur de validation",
+              "message": "Les données fournies ne sont pas valides",
+              "details": [
+                {
+                  "field": "email",
+                  "message": "Format d'email invalide"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Erreur interne du serveur",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            },
+            "example": {
+              "error": "Erreur interne du serveur",
+              "message": "Une erreur inattendue s'est produite"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "description": "Numéro de page pour la pagination",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        }
+      },
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "description": "Nombre d'éléments par page",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10
+        }
+      },
+      "SearchParam": {
+        "name": "search",
+        "in": "query",
+        "description": "Terme de recherche textuelle",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Users",
+      "description": "Gestion des utilisateurs et authentification",
+      "externalDocs": {
+        "description": "En savoir plus",
+        "url": "https://docs.ecolight.com/users"
+      }
+    },
+    {
+      "name": "Collectors",
+      "description": "Gestion des collecteurs privés de déchets",
+      "externalDocs": {
+        "description": "En savoir plus",
+        "url": "https://docs.ecolight.com/collectors"
+      }
+    },
+    {
+      "name": "Subscriptions",
+      "description": "Gestion des abonnements utilisateur-collecteur",
+      "externalDocs": {
+        "description": "En savoir plus",
+        "url": "https://docs.ecolight.com/subscriptions"
+      }
+    },
+    {
+      "name": "Schedules",
+      "description": "Gestion des horaires de collecte",
+      "externalDocs": {
+        "description": "En savoir plus",
+        "url": "https://docs.ecolight.com/schedules"
+      }
+    },
+    {
+      "name": "Notifications",
+      "description": "Système de notifications utilisateur",
+      "externalDocs": {
+        "description": "En savoir plus",
+        "url": "https://docs.ecolight.com/notifications"
+      }
+    },
+    {
+      "name": "Reports",
+      "description": "Signalements de décharges sauvages",
+      "externalDocs": {
+        "description": "En savoir plus",
+        "url": "https://docs.ecolight.com/reports"
+      }
+    }
+  ],
+  "externalDocs": {
+    "description": "Documentation complète Ecolight",
+    "url": "https://docs.ecolight.com"
+  }
+}

@@ -1,0 +1,125 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_COMPOSE_FILE = 'docker-compose.yml'
+        PROJECT_NAME = 'ecolight'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Environment Setup') {
+            steps {
+                script {
+                    // Copier .env.example vers .env si .env n'existe pas
+                    sh '''
+                        if [ ! -f .env ]; then
+                            cp .env.example .env
+                            echo "JWT_SECRET=$(openssl rand -base64 32)" >> .env
+                        fi
+                    '''
+                }
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                script {
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} build'
+                }
+            }
+        }
+        
+        stage('Test') {
+            steps {
+                script {
+                    // Validation simple
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} config'
+                    echo 'Configuration Docker Compose validée'
+                    
+                    // Vérifier que les fichiers requis existent
+                    sh '''
+                        echo "Vérification des fichiers requis..."
+                        test -f package.json && echo "✓ package.json présent"
+                        test -f server.js && echo "✓ server.js présent"
+                        test -f schema.sql && echo "✓ schema.sql présent"
+                        test -d config && echo "✓ Dossier config présent"
+                        test -d models && echo "✓ Dossier models présent"
+                        test -d controllers && echo "✓ Dossier controllers présent"
+                        test -d routes && echo "✓ Dossier routes présent"
+                    '''
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    // Arrêter les conteneurs existants
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down'
+                    
+                    // Démarrer les nouveaux conteneurs
+                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} up -d'
+                    
+                    // Attendre que les services soient prêts
+                    sh '''
+                        echo "Attente du démarrage des services..."
+                        sleep 10
+                        
+                        # Vérifier que MySQL est accessible
+                        docker-compose exec -T mysql mysqladmin ping -h localhost
+                        
+                        # Vérifier que le backend répond
+                        curl -f http://localhost:3000 || exit 1
+                        
+                        echo "Services déployés avec succès!"
+                    '''
+                }
+            }
+        }
+        
+        stage('Post-Deploy Verification') {
+            steps {
+                script {
+                    sh '''
+                        echo "=== État des conteneurs ==="
+                        docker-compose ps
+                        
+                        echo "=== Logs du backend ==="
+                        docker-compose logs --tail=20 backend
+                        
+                        echo "=== Vérification des endpoints ==="
+                        curl -s http://localhost:3000 | jq '.' || true
+                        curl -s http://localhost:3000/api/collectors | jq '.' || true
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                // Afficher les logs en cas de problème
+                sh 'docker-compose logs --tail=50'
+            }
+        }
+        
+        failure {
+            script {
+                // Nettoyer en cas d'échec
+                sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} down'
+            }
+        }
+        
+        success {
+            echo 'Pipeline exécuté avec succès! Application accessible sur http://localhost:3000'
+            echo 'Documentation API disponible sur http://localhost:3000/api-docs'
+        }
+    }
+}

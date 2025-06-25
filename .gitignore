@@ -1,0 +1,34 @@
+# === Backend Node.js ===
+ecolight-backend/node_modules/
+ecolight-backend/.env
+ecolight-backend/npm-debug.log
+ecolight-backend/yarn-error.log
+ecolight-backend/dist/
+ecolight-backend/.DS_Store
+
+# === Frontend React ===
+ecolight-frontend/node_modules/
+ecolight-frontend/.env
+ecolight-frontend/build/
+ecolight-frontend/.DS_Store
+ecolight-frontend/npm-debug.log
+ecolight-frontend/yarn-error.log
+
+# === Logs et fichiers temporaires ===
+*.log
+*.pid
+logs/
+tmp/
+
+# === Docker ===
+.env
+*.env.local
+.env.*.local
+docker-compose.override.yml
+
+# === IDE & Système ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
